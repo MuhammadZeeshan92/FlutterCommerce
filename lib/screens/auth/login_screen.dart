@@ -1,4 +1,4 @@
-import 'package:ecommerceapp/screens/admin/admin_dashboard.dart';
+import 'package:ecommerceapp/screens/admin/admin_main_screen.dart';
 import 'package:ecommerceapp/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (role == "ADMIN") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => AdminDashboard()),
+          MaterialPageRoute(builder: (_) => AdminMainScreen()),
         );
       } else {
         Navigator.pushReplacement(
