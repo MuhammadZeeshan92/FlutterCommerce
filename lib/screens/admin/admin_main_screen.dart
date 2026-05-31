@@ -1,5 +1,6 @@
+import 'package:ecommerceapp/providers/product_provider.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
 import 'add_product_screen.dart';
 import 'admin_products_screen.dart';
 import 'admin_dashboard.dart';
@@ -20,11 +21,13 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       const AdminDashboard(),
       AddProductScreen(
         onProductAdded: () {
+          context.read<ProductProvider>().fetchProducts();
           setState(() {
             currentIndex = 2;
           });
         },
       ),
+
       const AdminProductsScreen(),
     ];
     return Scaffold(

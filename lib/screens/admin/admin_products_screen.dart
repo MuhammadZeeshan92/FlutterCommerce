@@ -74,7 +74,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 padding: const EdgeInsets.only(left: 24, bottom: 16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 5),
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD4AF37).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -121,19 +123,19 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       ),
                     )
                   : productProvider.products.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 4),
-                          itemCount: productProvider.products.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final product =
-                                productProvider.products[index];
-                            return _buildProductCard(product);
-                          },
-                        ),
+                  ? _buildEmptyState()
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 4,
+                      ),
+                      itemCount: productProvider.products.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final product = productProvider.products[index];
+                        return _buildProductCard(product);
+                      },
+                    ),
             ),
           ],
         ),
@@ -192,7 +194,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFD4AF37).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -232,9 +236,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               decoration: BoxDecoration(
                 color: Colors.red.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.red.withOpacity(0.2),
-                ),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
               ),
               child: const Icon(
                 Icons.delete_outline_rounded,
@@ -279,8 +281,11 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.red.withOpacity(0.2)),
               ),
-              child: const Icon(Icons.delete_outline_rounded,
-                  color: Colors.redAccent, size: 26),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.redAccent,
+                size: 26,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -313,8 +318,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1A2E),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: const Color(0xFF2A2A3E)),
+                        border: Border.all(color: const Color(0xFF2A2A3E)),
                       ),
                       alignment: Alignment.center,
                       child: Text(
@@ -332,17 +336,29 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 // Delete
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // original delete logic goes here
+                    onTap: () async {
+                      try {
+                        await context.read<ProductProvider>().deleteProduct(
+                          product.id,
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Product deleted")),
+                        );
+                        Navigator.pop(context);
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(e.toString())));
+                      }
                     },
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
                         color: Colors.red.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
                       ),
                       alignment: Alignment.center,
                       child: const Text(

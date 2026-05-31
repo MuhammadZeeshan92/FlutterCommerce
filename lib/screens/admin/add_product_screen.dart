@@ -26,6 +26,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final ImagePicker picker = ImagePicker();
 
+  void clearForm() {
+    titleController.clear();
+    descriptionController.clear();
+    priceController.clear();
+    stockController.clear();
+    setState(() {
+      selectedImage = null;
+    });
+  }
+
   Future<void> addProduct() async {
     try {
       setState(() => isLoading = true);
@@ -46,17 +56,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       if (!mounted) return;
 
+      clearForm();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Product added successfully")),
       );
 
       widget.onProductAdded?.call();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -107,6 +120,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final VoidCallback? onProductAdded;
+    final VoidCallback? onBackToProducts;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: SafeArea(

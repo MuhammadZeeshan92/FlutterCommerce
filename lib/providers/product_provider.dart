@@ -29,4 +29,39 @@ class ProductProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> deleteProduct(String productId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // await ApiService.delete("/products/$productId");
+
+      await fetchProducts();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateProduct(
+    String productId,
+    Map<String, dynamic> updatedData,
+  ) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // await ApiService.put("/products/$productId", updatedData);
+
+      await fetchProducts();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }
