@@ -78,19 +78,19 @@ class AdminDashboard extends StatelessWidget {
                   _buildStatCard(
                     icon: Icons.inventory_2_outlined,
                     label: "Products",
-                    value: "—",
+                    value: "0",
                   ),
                   const SizedBox(width: 14),
                   _buildStatCard(
                     icon: Icons.shopping_cart_outlined,
                     label: "Orders",
-                    value: "—",
+                    value: "0",
                   ),
                   const SizedBox(width: 14),
                   _buildStatCard(
                     icon: Icons.people_outline_rounded,
                     label: "Users",
-                    value: "—",
+                    value: "0",
                   ),
                 ],
               ),
@@ -98,8 +98,7 @@ class AdminDashboard extends StatelessWidget {
               const SizedBox(height: 36),
 
               // ── Section label ──
-              _buildSectionHeader(
-                  Icons.dashboard_outlined, "Quick Actions"),
+              _buildSectionHeader(Icons.dashboard_outlined, "Quick Actions"),
 
               const SizedBox(height: 20),
 
@@ -111,8 +110,7 @@ class AdminDashboard extends StatelessWidget {
                 subtitle: "Create and publish a new product listing",
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const AddProductScreen()),
+                  MaterialPageRoute(builder: (_) => const AddProductScreen()),
                 ),
               ),
 
@@ -127,7 +125,8 @@ class AdminDashboard extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const AdminProductsScreen()),
+                    builder: (_) => const AdminProductsScreen(),
+                  ),
                 ),
               ),
 
@@ -137,12 +136,13 @@ class AdminDashboard extends StatelessWidget {
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF13131F),
                     borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: const Color(0xFF2A2A3E)),
+                    border: Border.all(color: const Color(0xFF2A2A3E)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -329,9 +329,7 @@ class AdminDashboard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Container(height: 1, color: const Color(0xFF1A1A2E)),
-        ),
+        Expanded(child: Container(height: 1, color: const Color(0xFF1A1A2E))),
       ],
     );
   }

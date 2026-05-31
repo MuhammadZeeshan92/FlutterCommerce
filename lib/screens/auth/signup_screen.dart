@@ -22,39 +22,62 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> signup() async {
     try {
+      if (nameController.text.trim().isEmpty ||
+          emailController.text.trim().isEmpty ||
+          passwordController.text.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+        return;
+      }
       setState(() => isLoading = true);
 
-      final response = await AuthService.register(
-        name: nameController.text,
-        email: emailController.text,
+      await AuthService.register(
+        name: nameController.text.trim(),
+        email: emailController.text.trim(),
         password: passwordController.text,
       );
 
-      final token = response.data["token"];
+      // Clear fields
+      nameController.clear();
+      emailController.clear();
+      passwordController.clear();
 
-      await Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).saveToken(token);
+      if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
+      // Success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Account created successfully. Please login."),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
         ),
       );
+
+      // Wait a little so user can see the message
+      await Future.delayed(const Duration(milliseconds: 1200));
+
+      if (!mounted) return;
+
+      Navigator.pop(context); // back to login
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
           backgroundColor: const Color(0xFF1E1E2E),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
-
-    setState(() => isLoading = false);
   }
 
   @override
@@ -204,10 +227,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         gradient: isLoading
                             ? null
                             : const LinearGradient(
-                                colors: [
-                                  Color(0xFFD4AF37),
-                                  Color(0xFFB8860B),
-                                ],
+                                colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
@@ -306,10 +326,7 @@ class _SignupScreenState extends State<SignupScreen> {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 15,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
@@ -319,8 +336,10 @@ class _SignupScreenState extends State<SignupScreen> {
           prefixIcon: Icon(icon, color: const Color(0xFFD4AF37), size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
       ),
     );

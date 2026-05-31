@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../core/services/api_service.dart';
 
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
+import 'dart:typed_data';
+
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  final VoidCallback? onProductAdded;
+
+  const AddProductScreen({super.key, this.onProductAdded});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -16,54 +22,87 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final stockController = TextEditingController();
 
   bool isLoading = false;
+  XFile? selectedImage;
+
+  final ImagePicker picker = ImagePicker();
 
   Future<void> addProduct() async {
     try {
       setState(() => isLoading = true);
 
-      await ApiService.post(
-        "/products",
-        {
-          "title": titleController.text,
-          "description": descriptionController.text,
-          "price": double.parse(priceController.text),
-          "stock": int.parse(stockController.text),
-        },
-      );
+      String imageUrl = "";
+
+      if (selectedImage != null) {
+        imageUrl = await uploadImageToCloudinary();
+      }
+
+      await ApiService.post("/products", {
+        "title": titleController.text,
+        "description": descriptionController.text,
+        "price": double.parse(priceController.text),
+        "stock": int.parse(stockController.text),
+        "image": imageUrl,
+      });
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle_outline_rounded,
-                  color: Color(0xFFD4AF37), size: 18),
-              SizedBox(width: 10),
-              Text("Product added successfully",
-                  style: TextStyle(color: Colors.white)),
-            ],
-          ),
-          backgroundColor: const Color(0xFF1A1A2E),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+        const SnackBar(content: Text("Product added successfully")),
       );
 
-      Navigator.pop(context);
+      widget.onProductAdded?.call();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString(),
-              style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF1E1E2E),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      setState(() => isLoading = false);
     }
+  }
 
-    setState(() => isLoading = false);
+  Future<void> pickImage() async {
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (image != null) {
+      setState(() {
+        selectedImage = image;
+      });
+    }
+  }
+
+  Future<String> uploadImageToCloudinary() async {
+    final signatureResponse = await ApiService.get("/upload/signature");
+
+    final signature = signatureResponse.data["signature"];
+    final timestamp = signatureResponse.data["timestamp"];
+    final cloudName = signatureResponse.data["cloudName"];
+    final apiKey = signatureResponse.data["apiKey"];
+    final folder = signatureResponse.data["folder"];
+
+    final bytes = await selectedImage!.readAsBytes();
+
+    MultipartFile multipartFile = MultipartFile.fromBytes(
+      bytes,
+      filename: selectedImage!.name,
+    );
+
+    FormData formData = FormData.fromMap({
+      "file": multipartFile,
+      "api_key": apiKey,
+      "timestamp": timestamp,
+      "signature": signature,
+      "folder": folder,
+    });
+
+    final response = await Dio().post(
+      "https://api.cloudinary.com/v1_1/$cloudName/image/upload",
+      data: formData,
+    );
+
+    return response.data["secure_url"];
   }
 
   @override
@@ -75,8 +114,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           children: [
             // ── Custom App Bar ──
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 children: [
                   GestureDetector(
@@ -87,8 +125,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1A2E),
                         borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: const Color(0xFF2A2A3E)),
+                        border: Border.all(color: const Color(0xFF2A2A3E)),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new_rounded,
@@ -143,15 +180,70 @@ class _AddProductScreenState extends State<AddProductScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 28),
+                  horizontal: 24,
+                  vertical: 28,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Section header
                     _buildSectionHeader(
-                        Icons.info_outline_rounded, "Product Details"),
+                      Icons.info_outline_rounded,
+                      "Product Details",
+                    ),
                     const SizedBox(height: 20),
+                    _buildLabel("Product Image"),
+                    const SizedBox(height: 8),
 
+                    GestureDetector(
+                      onTap: pickImage,
+                      child: Container(
+                        height: 180,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF13131F),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF2A2A3E)),
+                        ),
+                        child: selectedImage == null
+                            ? const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.image_outlined,
+                                    color: Color(0xFFD4AF37),
+                                    size: 40,
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    "Tap to select image",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: FutureBuilder<Uint8List>(
+                                  future: selectedImage!.readAsBytes(),
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    }
+
+                                    return Image.memory(
+                                      snapshot.data!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    );
+                                  },
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
                     _buildLabel("Product Title"),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -174,7 +266,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     const SizedBox(height: 32),
 
                     _buildSectionHeader(
-                        Icons.attach_money_rounded, "Pricing & Inventory"),
+                      Icons.attach_money_rounded,
+                      "Pricing & Inventory",
+                    ),
                     const SizedBox(height: 20),
 
                     // Price & Stock in a row
@@ -192,7 +286,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 icon: Icons.attach_money_rounded,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
-                                        decimal: true),
+                                      decimal: true,
+                                    ),
                               ),
                             ],
                           ),
@@ -245,9 +340,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
-                            color: isLoading
-                                ? const Color(0xFF1A1A2E)
-                                : null,
+                            color: isLoading ? const Color(0xFF1A1A2E) : null,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Container(
@@ -262,8 +355,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                     ),
                                   )
                                 : const Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.add_circle_outline_rounded,
@@ -321,9 +413,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Container(height: 1, color: const Color(0xFF1A1A2E)),
-        ),
+        Expanded(child: Container(height: 1, color: const Color(0xFF1A1A2E))),
       ],
     );
   }
@@ -370,8 +460,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ? Icon(icon, color: const Color(0xFFD4AF37), size: 20)
               : Padding(
                   padding: const EdgeInsets.only(left: 12, top: 14),
-                  child: Icon(icon,
-                      color: const Color(0xFFD4AF37), size: 20),
+                  child: Icon(icon, color: const Color(0xFFD4AF37), size: 20),
                 ),
           prefixIconConstraints: maxLines > 1
               ? const BoxConstraints(minWidth: 44, minHeight: 0)

@@ -16,13 +16,14 @@ class ProductProvider with ChangeNotifier {
 
     try {
       final response = await ApiService.get('/products');
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        _products = data.map((item) => Product.fromJson(item)).toList();
+        final List<dynamic> data = response.data["products"];
+
+        _products = data.map((e) => Product.fromJson(e)).toList();
       }
     } catch (e) {
-      // Handle error
-      print('Error fetching products: $e');
+      print("Error fetching products: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

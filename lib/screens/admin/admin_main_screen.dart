@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'add_product_screen.dart';
 import 'admin_products_screen.dart';
+import 'admin_dashboard.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -13,16 +14,22 @@ class AdminMainScreen extends StatefulWidget {
 class _AdminMainScreenState extends State<AdminMainScreen> {
   int currentIndex = 0;
 
-  final List<Widget> screens = [
-    const AdminProductsScreen(),
-    const AddProductScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final List<Widget> screens = [
+      const AdminDashboard(),
+      AddProductScreen(
+        onProductAdded: () {
+          setState(() {
+            currentIndex = 2;
+          });
+        },
+      ),
+      const AdminProductsScreen(),
+    ];
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
-      body: screens[currentIndex],
+      body: IndexedStack(index: currentIndex, children: screens),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -31,15 +38,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0D0D18),
-        border: Border(
-          top: BorderSide(color: Color(0xFF2A2A3E), width: 1),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFF2A2A3E), width: 1)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black,
-            blurRadius: 24,
-            offset: Offset(0, -4),
-          ),
+          BoxShadow(color: Colors.black, blurRadius: 24, offset: Offset(0, -4)),
         ],
       ),
       child: SafeArea(
@@ -47,19 +48,27 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
                 index: 0,
-                icon: Icons.inventory_2_outlined,
-                activeIcon: Icons.inventory_2_rounded,
-                label: "Products",
+                icon: Icons.dashboard_outlined,
+                activeIcon: Icons.dashboard,
+                label: "Dashboard",
               ),
-              const Spacer(),
+
               _buildNavItem(
                 index: 1,
                 icon: Icons.add_box_outlined,
                 activeIcon: Icons.add_box_rounded,
                 label: "Add Product",
+              ),
+
+              _buildNavItem(
+                index: 2,
+                icon: Icons.inventory_2_outlined,
+                activeIcon: Icons.inventory_2_rounded,
+                label: "Products",
               ),
             ],
           ),
