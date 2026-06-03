@@ -1,4 +1,5 @@
 import 'package:ecommerceapp/providers/product_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'add_product_screen.dart';
@@ -16,12 +17,25 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   int currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      Provider.of<DashboardProvider>(
+        context,
+        listen: false,
+      ).fetchStats();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
       const AdminDashboard(),
       AddProductScreen(
         onProductAdded: () {
           context.read<ProductProvider>().fetchProducts();
+          context.read<DashboardProvider>().fetchStats();
           setState(() {
             currentIndex = 2;
           });

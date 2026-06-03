@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/product_provider.dart';
+import '../../providers/dashboard_provider.dart';
+import 'add_product_screen.dart';
 
 class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({super.key});
@@ -11,14 +13,6 @@ class AdminProductsScreen extends StatefulWidget {
 }
 
 class _AdminProductsScreenState extends State<AdminProductsScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      Provider.of<ProductProvider>(context, listen: false).fetchProducts();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final productProvider = Provider.of<ProductProvider>(context);
@@ -154,20 +148,24 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       child: Row(
         children: [
           // ── Product icon placeholder ──
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFD4AF37).withOpacity(0.15),
-              ),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: Color(0xFFD4AF37),
-              size: 22,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              product.image,
+              width: 52,
+              height: 52,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return Container(
+                  width: 52,
+                  height: 52,
+                  color: const Color(0xFF1A1A2E),
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.white54,
+                  ),
+                );
+              },
             ),
           ),
 
@@ -227,23 +225,54 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
           const SizedBox(width: 8),
 
-          // ── Delete button ──
-          GestureDetector(
-            onTap: () => _confirmDelete(product),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddProductScreen(product: product),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    color: Colors.blue,
+                    size: 18,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.delete_outline_rounded,
-                color: Colors.redAccent,
-                size: 18,
+
+              const SizedBox(width: 8),
+
+              GestureDetector(
+                onTap: () => _confirmDelete(product),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.redAccent,
+                    size: 18,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -337,17 +366,22 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
+                      Navigator.pop(context);
+
                       try {
                         await context.read<ProductProvider>().deleteProduct(
                           product.id,
                         );
+                        await context.read<DashboardProvider>().fetchStats();
+
                         if (!mounted) return;
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Product deleted")),
                         );
-                        Navigator.pop(context);
                       } catch (e) {
                         if (!mounted) return;
+
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text(e.toString())));

@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'add_product_screen.dart';
 import 'admin_products_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/dashboard_provider.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
+
+    final dashboardProvider =
+    Provider.of<DashboardProvider>(context);
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: SafeArea(
@@ -78,19 +83,19 @@ class AdminDashboard extends StatelessWidget {
                   _buildStatCard(
                     icon: Icons.inventory_2_outlined,
                     label: "Products",
-                    value: "0",
+                    value: dashboardProvider.totalProducts.toString(),
                   ),
                   const SizedBox(width: 14),
                   _buildStatCard(
                     icon: Icons.shopping_cart_outlined,
                     label: "Orders",
-                    value: "0",
+                    value: dashboardProvider.totalOrders.toString(),
                   ),
                   const SizedBox(width: 14),
                   _buildStatCard(
                     icon: Icons.people_outline_rounded,
                     label: "Users",
-                    value: "0",
+                    value: dashboardProvider.totalUsers.toString(),
                   ),
                 ],
               ),

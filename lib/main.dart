@@ -5,6 +5,7 @@ import 'providers/cart_provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'core/services/api_service.dart';
+import 'providers/dashboard_provider.dart';
 
 void main() {
   ApiService.setupInterceptor();
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -87,7 +89,9 @@ class MyApp extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(
-                  color: Color(0xFFD4AF37), width: 1.5),
+                color: Color(0xFFD4AF37),
+                width: 1.5,
+              ),
             ),
           ),
 
@@ -143,9 +147,7 @@ class MyApp extends StatelessWidget {
           ),
 
           // Icon theme
-          iconTheme: const IconThemeData(
-            color: Color(0xFFD4AF37),
-          ),
+          iconTheme: const IconThemeData(color: Color(0xFFD4AF37)),
 
           // Font
           fontFamily: 'SF Pro Display', // falls back to system sans-serif

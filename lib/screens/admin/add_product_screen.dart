@@ -5,11 +5,14 @@ import '../../core/services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'dart:typed_data';
+import '../../models/product_model.dart';
 
 class AddProductScreen extends StatefulWidget {
   final VoidCallback? onProductAdded;
 
-  const AddProductScreen({super.key, this.onProductAdded});
+  final Product? product;
+
+  const AddProductScreen({super.key, this.onProductAdded, this.product});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -57,7 +60,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (!mounted) return;
 
       clearForm();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Product added successfully")),
       );
@@ -70,6 +73,37 @@ class _AddProductScreenState extends State<AddProductScreen> {
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> updateProduct() async {
+    try {
+      setState(() => isLoading = true);
+
+      await ApiService.put("/products/${widget.product!.id}", {
+        "title": titleController.text,
+        "description": descriptionController.text,
+        "price": double.parse(priceController.text),
+        "stock": int.parse(stockController.text),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Product updated")));
+
+      widget.onProductAdded?.call();
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -119,10 +153,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final VoidCallback? onProductAdded;
-    final VoidCallback? onBackToProducts;
+  void initState() {
+    super.initState();
 
+    if (widget.product != null) {
+      titleController.text = widget.product!.title;
+      descriptionController.text = widget.product!.description;
+
+      priceController.text = widget.product!.price.toString();
+
+      stockController.text = widget.product!.stock.toString();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: SafeArea(
@@ -334,7 +379,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : addProduct,
+                        onPressed: isLoading
+                            ? null
+                            : widget.product == null
+                            ? addProduct
+                            : updateProduct,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           disabledBackgroundColor: Colors.transparent,
@@ -370,7 +419,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                       strokeWidth: 2.5,
                                     ),
                                   )
-                                : const Row(
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
@@ -380,7 +429,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        "Add Product",
+                                        widget.product == null
+                                            ? "Add Product"
+                                            : "Update Product",
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,

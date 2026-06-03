@@ -35,9 +35,15 @@ class ProductProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // await ApiService.delete("/products/$productId");
+      print("Deleting product: $productId");
+
+      await ApiService.delete("/products/$productId");
+
+      print("Delete API completed");
 
       await fetchProducts();
+
+      print("Products fetched again");
     } catch (e) {
       rethrow;
     } finally {
@@ -54,7 +60,7 @@ class ProductProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // await ApiService.put("/products/$productId", updatedData);
+      await ApiService.put("/products/$productId", updatedData);
 
       await fetchProducts();
     } catch (e) {

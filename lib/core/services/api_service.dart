@@ -11,9 +11,7 @@ class ApiService {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
 
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: {"Content-Type": "application/json"},
     ),
   );
 
@@ -22,14 +20,12 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final prefs =
-              await SharedPreferences.getInstance();
+          final prefs = await SharedPreferences.getInstance();
 
           final token = prefs.getString("token");
 
           if (token != null) {
-            options.headers["Authorization"] =
-                "Bearer $token";
+            options.headers["Authorization"] = "Bearer $token";
           }
 
           handler.next(options);
@@ -46,9 +42,17 @@ class ApiService {
     String endpoint,
     Map<String, dynamic> data,
   ) async {
-    return await dio.post(
-      endpoint,
-      data: data,
-    );
+    return await dio.post(endpoint, data: data);
+  }
+
+  static Future<Response> put(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
+    return await dio.put(endpoint, data: data);
+  }
+
+  static Future<Response> delete(String endpoint) async {
+    return await dio.delete(endpoint);
   }
 }
