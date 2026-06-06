@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'add_product_screen.dart';
 import 'admin_products_screen.dart';
 import 'admin_dashboard.dart';
+import '../../providers/app_data_provider.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -21,10 +22,11 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     super.initState();
 
     Future.microtask(() {
-      Provider.of<DashboardProvider>(
-        context,
-        listen: false,
-      ).fetchStats();
+      context.read<AppDataProvider>().initAppData();
+    });
+
+    Future.microtask(() {
+      Provider.of<DashboardProvider>(context, listen: false).fetchStats();
     });
   }
 
@@ -33,9 +35,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     final List<Widget> screens = [
       const AdminDashboard(),
       AddProductScreen(
-        onProductAdded: () {
-          context.read<ProductProvider>().fetchProducts();
-          context.read<DashboardProvider>().fetchStats();
+        onProductAdded: () async {
+          await context.read<DashboardProvider>().fetchStats();
+          await context.read<ProductProvider>().fetchProducts();
           setState(() {
             currentIndex = 2;
           });

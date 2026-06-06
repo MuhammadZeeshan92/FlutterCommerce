@@ -35,16 +35,15 @@ class ProductProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      print("Deleting product: $productId");
+      // 1. Optimistic UI update (REMOVE instantly)
+      _products.removeWhere((p) => p.id == productId);
+      notifyListeners();
 
+      // 2. API call
       await ApiService.delete("/products/$productId");
-
-      print("Delete API completed");
-
-      await fetchProducts();
-
-      print("Products fetched again");
     } catch (e) {
+      // rollback by refetch
+      await fetchProducts();
       rethrow;
     } finally {
       _isLoading = false;
@@ -67,6 +66,17 @@ class ProductProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void updateFromResponse(dynamic updatedProductJson) {
+    final updated = Product.fromJson(updatedProductJson);
+
+    final index = _products.indexWhere((p) => p.id == updated.id);
+
+    if (index != -1) {
+      _products[index] = updated;
       notifyListeners();
     }
   }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/services/api_service.dart';
-
+import 'package:provider/provider.dart';
+import '../../providers/product_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'dart:typed_data';
@@ -80,7 +81,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       setState(() => isLoading = true);
 
-      await ApiService.put("/products/${widget.product!.id}", {
+      final response = await ApiService.put("/products/${widget.product!.id}", {
         "title": titleController.text,
         "description": descriptionController.text,
         "price": double.parse(priceController.text),
@@ -89,13 +90,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       if (!mounted) return;
 
+      // 🔥 IMPORTANT: update provider directly OR refresh list
+    context.read<ProductProvider>().updateFromResponse(
+      response.data["updatedProduct"],
+    );
+
+      Navigator.pop(context);
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Product updated")));
 
       widget.onProductAdded?.call();
 
-      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(
         context,

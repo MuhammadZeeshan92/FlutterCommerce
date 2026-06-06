@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'core/services/api_service.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/app_data_provider.dart';
 
 void main() {
   ApiService.setupInterceptor();
@@ -20,6 +21,14 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+
+        ChangeNotifierProxyProvider<ProductProvider, AppDataProvider>(
+          create: (context) => AppDataProvider(
+            Provider.of<ProductProvider>(context, listen: false),
+          ),
+          update: (context, productProvider, previous) =>
+              AppDataProvider(productProvider),
+        ),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
