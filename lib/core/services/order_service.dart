@@ -4,13 +4,11 @@ import 'api_service.dart';
 
 class OrderService {
   static Future<Response> createOrder(
-    List<Map<String, dynamic>> items,
+    Map<String, dynamic> data,
   ) async {
     return await ApiService.post(
       "/orders",
-      {
-        "items": items,
-      },
+      data,
     );
   }
 }

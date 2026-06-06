@@ -2,9 +2,112 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/order_service.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/order_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
+
+  void _placeOrder(
+    BuildContext context,
+    CartProvider cartProvider,
+    String paymentMethod,
+  ) async {
+    try {
+      final items = cartProvider.items.map((item) {
+        return {"productId": item.product.id, "quantity": item.quantity};
+      }).toList();
+
+      final orderResponse = await OrderService.createOrder({
+        "items": items,
+        "paymentMethod": paymentMethod,
+        "totalAmount": cartProvider.totalPrice,
+        "status": paymentMethod == "cod" ? "pending" : "awaiting_payment",
+      });
+
+      final orderId = orderResponse.data["order"]["id"];
+
+      await context.read<OrderProvider>().initiatePayment(orderId);
+
+      final paymentUrl = context.read<OrderProvider>().paymentUrl;
+
+      if (paymentUrl != null) {
+        final uri = Uri.parse(paymentUrl);
+
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+
+      // ✅ MOVE THIS HERE (safe after success)
+      cartProvider.clearCart();
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Order placed via $paymentMethod")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  void _showPaymentDialog(BuildContext context, CartProvider cartProvider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0D0D18),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Select Payment Method",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              _paymentTile(
+                context,
+                title: "JazzCash",
+                icon: Icons.phone_android,
+                onTap: () => _placeOrder(context, cartProvider, "jazzcash"),
+              ),
+
+              const SizedBox(height: 12),
+
+              _paymentTile(
+                context,
+                title: "Easypaisa",
+                icon: Icons.account_balance_wallet,
+                onTap: () => _placeOrder(context, cartProvider, "easypaisa"),
+              ),
+
+              const SizedBox(height: 12),
+
+              _paymentTile(
+                context,
+                title: "Cash on Delivery",
+                icon: Icons.money,
+                onTap: () => _placeOrder(context, cartProvider, "cod"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +155,9 @@ class CartScreen extends StatelessWidget {
                   if (cartProvider.items.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 5),
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFD4AF37).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -83,14 +188,14 @@ class CartScreen extends StatelessWidget {
                   ? _buildEmptyState()
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 20),
+                        horizontal: 24,
+                        vertical: 20,
+                      ),
                       itemCount: cartProvider.items.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 12),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = cartProvider.items[index];
-                        return _buildCartItem(
-                            context, item, cartProvider);
+                        return _buildCartItem(context, item, cartProvider);
                       },
                     ),
             ),
@@ -105,7 +210,10 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _buildCartItem(
-      BuildContext context, dynamic item, CartProvider cartProvider) {
+    BuildContext context,
+    dynamic item,
+    CartProvider cartProvider,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -192,12 +300,11 @@ class CartScreen extends StatelessWidget {
                   children: [
                     _buildQtyButton(
                       icon: Icons.remove_rounded,
-                      onTap: () => cartProvider
-                          .decreaseQuantity(item.product.id),
+                      onTap: () =>
+                          cartProvider.decreaseQuantity(item.product.id),
                     ),
                     Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         item.quantity.toString(),
                         style: const TextStyle(
@@ -209,8 +316,8 @@ class CartScreen extends StatelessWidget {
                     ),
                     _buildQtyButton(
                       icon: Icons.add_rounded,
-                      onTap: () => cartProvider
-                          .increaseQuantity(item.product.id),
+                      onTap: () =>
+                          cartProvider.increaseQuantity(item.product.id),
                     ),
                   ],
                 ),
@@ -222,8 +329,10 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQtyButton(
-      {required IconData icon, required VoidCallback onTap}) {
+  Widget _buildQtyButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -233,30 +342,19 @@ class CartScreen extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: const Color(0xFFD4AF37),
-          size: 16,
-        ),
+        child: Icon(icon, color: const Color(0xFFD4AF37), size: 16),
       ),
     );
   }
 
-  Widget _buildCheckoutPanel(
-      BuildContext context, CartProvider cartProvider) {
+  Widget _buildCheckoutPanel(BuildContext context, CartProvider cartProvider) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
       decoration: const BoxDecoration(
         color: Color(0xFF0D0D18),
-        border: Border(
-          top: BorderSide(color: Color(0xFF2A2A3E), width: 1),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFF2A2A3E), width: 1)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black,
-            blurRadius: 24,
-            offset: Offset(0, -4),
-          ),
+          BoxShadow(color: Colors.black, blurRadius: 24, offset: Offset(0, -4)),
         ],
       ),
       child: Column(
@@ -298,46 +396,27 @@ class CartScreen extends StatelessWidget {
             height: 56,
             child: ElevatedButton(
               onPressed: () async {
-                try {
-                  final items = cartProvider.items.map((item) {
+                final response = await OrderService.createOrder({
+                  "items": cartProvider.items.map((item) {
                     return {
                       "productId": item.product.id,
                       "quantity": item.quantity,
                     };
-                  }).toList();
+                  }).toList(),
+                  "paymentMethod": "jazzcash",
+                  "totalAmount": cartProvider.totalPrice,
+                  "status": "awaiting_payment",
+                });
 
-                  await OrderService.createOrder(items);
-                  cartProvider.clearCart();
+                final orderId = response.data["order"]["id"];
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(Icons.check_circle_outline_rounded,
-                              color: Color(0xFFD4AF37), size: 18),
-                          SizedBox(width: 10),
-                          Text("Order placed successfully!",
-                              style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                      backgroundColor: const Color(0xFF1A1A2E),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString(),
-                          style:
-                              const TextStyle(color: Colors.white)),
-                      backgroundColor: const Color(0xFF1E1E2E),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
+                await context.read<OrderProvider>().initiatePayment(orderId);
+
+                final paymentUrl = context.read<OrderProvider>().paymentUrl;
+
+                if (paymentUrl != null) {
+                  final uri = Uri.parse(paymentUrl);
+                  await launchUrl(uri);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -362,8 +441,11 @@ class CartScreen extends StatelessWidget {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.shopping_cart_checkout_rounded,
-                          color: Color(0xFF0A0A0F), size: 20),
+                      Icon(
+                        Icons.shopping_cart_checkout_rounded,
+                        color: Color(0xFF0A0A0F),
+                        size: 20,
+                      ),
                       SizedBox(width: 10),
                       Text(
                         "Place Order",
@@ -391,10 +473,7 @@ class CartScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withOpacity(0.45),
-          ),
+          style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.45)),
         ),
         Text(
           value,
@@ -449,6 +528,38 @@ class CartScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _paymentTile(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF13131F),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF2A2A3E)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFD4AF37)),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -19,10 +19,20 @@ enum Role {
 
 enum OrderStatus {
   PENDING
+  AWAITING_PAYMENT
+  PAID
+  FAILED
   CONFIRMED
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
 }
 
 model User {
@@ -62,6 +72,10 @@ model Order {
 
   totalAmount Float
   status      OrderStatus @default(PENDING)
+
+  paymentMethod String?   // COD / JAZZCASH / EASYPAISA
+  paymentStatus  PaymentStatus  @default("UNPAID")
+  transactionId  String?
 
   items OrderItem[]
 

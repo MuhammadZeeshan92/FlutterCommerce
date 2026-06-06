@@ -2,12 +2,10 @@ import { prisma } from "../config/prisma.js";
 
 const createOrder = async (req, res) => {
   try {
-    const { items } = req.body;
+    const { items, paymentMethod } = req.body;
 
     if (!items || items.length === 0) {
-      return res.status(400).json({
-        message: "No items in order",
-      });
+      return res.status(400).json({ message: "No items in order" });
     }
 
     let total = 0;
@@ -19,12 +17,9 @@ const createOrder = async (req, res) => {
       });
 
       if (!product) {
-        return res.status(404).json({
-          message: "Product not found",
-        });
+        return res.status(404).json({ message: "Product not found" });
       }
 
-      // ❗ STOCK CHECK
       if (product.stock < item.quantity) {
         return res.status(400).json({
           message: `Not enough stock for ${product.title}`,
@@ -40,11 +35,17 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Create order first
+    const isCOD = paymentMethod === "cod";
+
     const order = await prisma.order.create({
       data: {
         userId: req.user.id,
         totalAmount: total,
+
+        paymentMethod,
+        paymentStatus: isCOD ? "PAID" : "UNPAID",
+        status: isCOD ? "CONFIRMED" : "AWAITING_PAYMENT",
+
         items: {
           create: orderItems,
         },
@@ -54,7 +55,7 @@ const createOrder = async (req, res) => {
       },
     });
 
-    // ❗ Reduce stock AFTER order creation
+    // reduce stock
     for (const item of items) {
       const product = await prisma.product.findUnique({
         where: { id: item.productId },
@@ -69,7 +70,7 @@ const createOrder = async (req, res) => {
     }
 
     res.status(201).json({
-      message: "Order placed successfully",
+      message: "Order created successfully",
       order,
     });
   } catch (error) {

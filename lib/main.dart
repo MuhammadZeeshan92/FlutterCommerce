@@ -7,6 +7,7 @@ import 'screens/auth/login_screen.dart';
 import 'core/services/api_service.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/app_data_provider.dart';
+import 'providers/order_provider.dart';
 
 void main() {
   ApiService.setupInterceptor();
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

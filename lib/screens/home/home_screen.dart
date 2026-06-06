@@ -65,8 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       return GestureDetector(
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const CartScreen()),
+                          MaterialPageRoute(builder: (_) => const CartScreen()),
                         ),
                         child: Stack(
                           clipBehavior: Clip.none,
@@ -78,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 gradient: const LinearGradient(
                                   colors: [
                                     Color(0xFFD4AF37),
-                                    Color(0xFFB8860B)
+                                    Color(0xFFB8860B),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -86,8 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFD4AF37)
-                                        .withOpacity(0.3),
+                                    color: const Color(
+                                      0xFFD4AF37,
+                                    ).withOpacity(0.3),
                                     blurRadius: 16,
                                     offset: const Offset(0, 4),
                                   ),
@@ -148,8 +148,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     const SizedBox(width: 14),
-                    Icon(Icons.search_rounded,
-                        color: Colors.white.withOpacity(0.3), size: 20),
+                    Icon(
+                      Icons.search_rounded,
+                      color: Colors.white.withOpacity(0.3),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       "Search products...",
@@ -195,14 +198,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Container(
-                        height: 1, color: const Color(0xFF1A1A2E)),
+                    child: Container(height: 1, color: const Color(0xFF1A1A2E)),
                   ),
                   const SizedBox(width: 12),
                   if (!productProvider.isLoading)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFD4AF37).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -252,20 +256,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )
                   : productProvider.products.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 4),
-                          itemCount: productProvider.products.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 14),
-                          itemBuilder: (context, index) {
-                            final product =
-                                productProvider.products[index];
-                            return _buildProductCard(
-                                context, product);
-                          },
-                        ),
+                  ? _buildEmptyState()
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 4,
+                      ),
+                      itemCount: productProvider.products.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final product = productProvider.products[index];
+                        return _buildProductCard(context, product);
+                      },
+                    ),
             ),
           ],
         ),
@@ -293,17 +296,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: const Color(0xFFD4AF37).withOpacity(0.15),
                     ),
+                    image: product.image != null && product.image.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(product.image),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    color: const Color(0xFF13131F),
                   ),
-                  child: const Icon(
-                    Icons.inventory_2_outlined,
-                    color: Color(0xFFD4AF37),
-                    size: 24,
-                  ),
+                  child: (product.image == null || product.image.isEmpty)
+                      ? const Icon(
+                          Icons.inventory_2_outlined,
+                          color: Color(0xFFD4AF37),
+                          size: 24,
+                        )
+                      : null,
                 ),
 
                 const SizedBox(width: 14),
@@ -326,7 +337,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFD4AF37).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -348,7 +361,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (product.stock != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: product.stock > 0
                           ? const Color(0xFF4CAF50).withOpacity(0.1)
@@ -402,23 +417,31 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 46,
               child: ElevatedButton(
                 onPressed: () {
-                  Provider.of<CartProvider>(context, listen: false)
-                      .addToCart(product);
+                  Provider.of<CartProvider>(
+                    context,
+                    listen: false,
+                  ).addToCart(product);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Row(
                         children: [
-                          Icon(Icons.check_circle_outline_rounded,
-                              color: Color(0xFFD4AF37), size: 18),
+                          Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: Color(0xFFD4AF37),
+                            size: 18,
+                          ),
                           SizedBox(width: 10),
-                          Text("Added to cart",
-                              style: TextStyle(color: Colors.white)),
+                          Text(
+                            "Added to cart",
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ],
                       ),
                       backgroundColor: const Color(0xFF1A1A2E),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   );
                 },
@@ -444,8 +467,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_shopping_cart_rounded,
-                            color: Color(0xFF0A0A0F), size: 18),
+                        Icon(
+                          Icons.add_shopping_cart_rounded,
+                          color: Color(0xFF0A0A0F),
+                          size: 18,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           "Add to Cart",
