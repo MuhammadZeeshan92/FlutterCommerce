@@ -73,9 +73,9 @@ model Order {
   totalAmount Float
   status      OrderStatus @default(PENDING)
 
-  paymentMethod String?   // COD / JAZZCASH / EASYPAISA
-  paymentStatus  PaymentStatus  @default("UNPAID")
-  transactionId  String?
+  paymentMethod String? // COD / JAZZCASH / EASYPAISA
+  paymentStatus PaymentStatus @default(UNPAID)
+  transactionId String?
 
   items OrderItem[]
 

@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import statsRoutes from "./routes/statsRoutes.js";
+import paymentRoutes from "./routes/jazzcashPaymentRoutes.js";
 
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api", statsRoutes);
+app.use("/api/payment", paymentRoutes);
 
 
 

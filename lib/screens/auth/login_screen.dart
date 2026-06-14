@@ -2,7 +2,7 @@ import 'package:ecommerceapp/screens/admin/admin_main_screen.dart';
 import 'package:ecommerceapp/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:dio/dio.dart';
 import '../../core/services/auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../home/home_screen.dart';
@@ -47,16 +47,25 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: const Color(0xFF1E1E2E),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+  String message = "Something went wrong";
+
+  if (e is DioException) {
+    if (e.type == DioExceptionType.connectionError) {
+      message = "No internet connection";
+    } else if (e.type == DioExceptionType.connectionTimeout) {
+      message = "Connection timeout";
+    } else if (e.response != null) {
+      message = e.response?.data["message"] ?? message;
     }
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
 
     setState(() => isLoading = false);
   }

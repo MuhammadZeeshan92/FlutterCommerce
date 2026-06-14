@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../../core/services/order_service.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
@@ -8,11 +9,15 @@ import 'package:url_launcher/url_launcher.dart';
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
-  void _placeOrder(
+  Future<void> _placeOrder(
     BuildContext context,
     CartProvider cartProvider,
     String paymentMethod,
   ) async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final orderProvider = context.read<OrderProvider>();
+
     try {
       final items = cartProvider.items.map((item) {
         return {"productId": item.product.id, "quantity": item.quantity};
@@ -27,31 +32,71 @@ class CartScreen extends StatelessWidget {
 
       final orderId = orderResponse.data["order"]["id"];
 
-      await context.read<OrderProvider>().initiatePayment(orderId);
+      await orderProvider.initiatePayment(orderId, paymentMethod);
 
-      final paymentUrl = context.read<OrderProvider>().paymentUrl;
+      final paymentUrl = orderProvider.paymentUrl;
 
-      if (paymentUrl != null) {
-        final uri = Uri.parse(paymentUrl);
-
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (paymentUrl != null && paymentUrl.isNotEmpty) {
+        await launchUrl(
+          Uri.parse(paymentUrl),
+          mode: LaunchMode.externalApplication,
+        );
       }
 
-      // ✅ MOVE THIS HERE (safe after success)
       cartProvider.clearCart();
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
+      if (navigator.canPop()) {
+        navigator.pop();
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text("Order placed via $paymentMethod")),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      messenger.showSnackBar(
+        SnackBar(content: Text(_resolveOrderErrorMessage(e))),
+      );
     }
+  }
+
+  String _resolveOrderErrorMessage(Object error) {
+    const fallbackMessage =
+        "Payment could not be started. Please try again.";
+
+    if (error is DioException) {
+      if (error.type == DioExceptionType.connectionError) {
+        return "Cannot reach the server. Check your internet connection and try again.";
+      }
+
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return "The payment request timed out. Please try again.";
+      }
+
+      final responseData = error.response?.data;
+
+      if (responseData is Map<String, dynamic>) {
+        final message = responseData["message"]?.toString().trim();
+        if (message != null && message.isNotEmpty) {
+          return message;
+        }
+      }
+
+      if (responseData is String && responseData.trim().isNotEmpty) {
+        return responseData.trim();
+      }
+
+      if (error.response?.statusCode == 500) {
+        return "JazzCash payment failed on the server. Please check backend logs or payment configuration.";
+      }
+    }
+
+    final message = error.toString().trim();
+    if (message.isNotEmpty && message != "Exception") {
+      return message;
+    }
+
+    return fallbackMessage;
   }
 
   void _showPaymentDialog(BuildContext context, CartProvider cartProvider) {
@@ -395,29 +440,8 @@ class CartScreen extends StatelessWidget {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: () async {
-                final response = await OrderService.createOrder({
-                  "items": cartProvider.items.map((item) {
-                    return {
-                      "productId": item.product.id,
-                      "quantity": item.quantity,
-                    };
-                  }).toList(),
-                  "paymentMethod": "jazzcash",
-                  "totalAmount": cartProvider.totalPrice,
-                  "status": "awaiting_payment",
-                });
-
-                final orderId = response.data["order"]["id"];
-
-                await context.read<OrderProvider>().initiatePayment(orderId);
-
-                final paymentUrl = context.read<OrderProvider>().paymentUrl;
-
-                if (paymentUrl != null) {
-                  final uri = Uri.parse(paymentUrl);
-                  await launchUrl(uri);
-                }
+              onPressed: () {
+                _showPaymentDialog(context, cartProvider);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,

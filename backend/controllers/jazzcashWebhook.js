@@ -1,9 +1,9 @@
-const jazzcashWebhook = async (req, res) => {
+export const jazzcashWebhook = async (req, res) => {
   try {
     const { transactionId, status } = req.body;
 
     const order = await prisma.order.findFirst({
-      where: { paymentId: transactionId },
+      where: { transactionId },
     });
 
     if (!order) {
@@ -13,14 +13,20 @@ const jazzcashWebhook = async (req, res) => {
     if (status === "SUCCESS") {
       await prisma.order.update({
         where: { id: order.id },
-        data: { status: "CONFIRMED" },
+        data: {
+          paymentStatus: "PAID",
+          status: "PAID",
+        },
       });
     }
 
     if (status === "FAILED") {
       await prisma.order.update({
         where: { id: order.id },
-        data: { status: "CANCELLED" },
+        data: {
+          paymentStatus: "FAILED",
+          status: "CANCELLED",
+        },
       });
     }
 
@@ -29,5 +35,3 @@ const jazzcashWebhook = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-export default jazzcashWebhook;

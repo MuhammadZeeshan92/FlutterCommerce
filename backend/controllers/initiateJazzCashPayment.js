@@ -1,40 +1,69 @@
 import { prisma } from "../config/prisma.js";
 import crypto from "crypto";
 
-const initiateJazzCashPayment = async (req, res) => {
+export const initiateJazzCash = async (req, res) => {
   try {
     const { orderId } = req.body;
+
+    console.log("ORDER ID RECEIVED:", orderId);
+
+    if (!orderId) {
+      return res.status(400).json({
+        message: "orderId is required to start JazzCash payment.",
+      });
+    }
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
     });
 
+    console.log("ORDER FOUND:", order);
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // 🔥 fake transaction id (real JazzCash gives this)
+    if (order.paymentMethod !== "jazzcash" && order.paymentMethod !== "JAZZCASH") {
+      return res.status(400).json({
+        message: "This order was not created for JazzCash payment.",
+      });
+    }
+
+    if (order.status === "PAID" || order.paymentStatus === "PAID") {
+      return res.status(400).json({
+        message: "This order is already paid.",
+      });
+    }
+
+    // 🔐 generate transaction id
     const transactionId = crypto.randomUUID();
 
-    // Save payment reference
+    // update order
     await prisma.order.update({
       where: { id: orderId },
       data: {
         paymentMethod: "JAZZCASH",
-        paymentId: transactionId,
+        paymentStatus: "PENDING",
+        transactionId,
+        status: "AWAITING_PAYMENT",
       },
     });
 
-    // 🔥 THIS is where real JazzCash URL would be
-    const paymentUrl = `https://fake-jazzcash-gateway.com/pay?txn=${transactionId}&amount=${order.totalAmount}`;
+    // 🔥 FAKE gateway URL (real JazzCash replaces this)
+    const paymentUrl =
+      `https://fake-jazzcash-gateway.com/pay?txn=${transactionId}&amount=${order.totalAmount}`;
 
     res.json({
       paymentUrl,
       transactionId,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("========== JAZZCASH ERROR ==========");
+    console.error(err);
+    console.error("===================================");
+
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
-
-export default initiateJazzCashPayment;
